@@ -2,15 +2,15 @@ cabal-version:          2.2
 
 name:                   hw-uri
 version:                0.0.0.1
-synopsis:               CI Assistant for Haskell projects
-description:            CI Assistant for Haskell projects.  Implements package caching.
+synopsis:               Supports IO on URIs
+description:            Supports IO on URIs.
 homepage:               https://github.com/haskell-works/hw-uri
 license:                BSD-3-Clause
 license-file:           LICENSE
 author:                 John Ky
 maintainer:             newhoggy@gmail.com
 copyright:              John Ky 2019
-category:               Development
+category:               Data
 extra-source-files:     CHANGELOG.md, README.md
 
 source-repository head
