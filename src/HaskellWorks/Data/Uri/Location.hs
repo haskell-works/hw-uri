@@ -12,10 +12,12 @@ module HaskellWorks.Data.Uri.Location
 
 import Antiope.Core   (ToText (..), fromText)
 import Antiope.S3     (ObjectKey (..), S3Uri (..))
+import Data.Aeson
 import Data.Maybe     (fromMaybe)
 import Data.Semigroup ((<>))
 import Data.Text      (Text)
 import GHC.Generics   (Generic)
+import Data.Aeson     (ToJSON)
 
 import qualified Data.Text       as T
 import qualified System.FilePath as FP
@@ -32,6 +34,12 @@ data Location
   | Local FilePath
   | HttpUri Text
   deriving (Show, Eq, Generic)
+
+instance ToJSON Location where
+  toJSON v = case v of
+    S3 uri          -> toJSON uri
+    Local filePath  -> toJSON filePath
+    HttpUri text    -> toJSON text
 
 instance ToText Location where
   toText (S3 uri)       = toText uri
