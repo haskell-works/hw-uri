@@ -7,6 +7,7 @@ module HaskellWorks.Data.Uri.LocationSpec
 
 import Antiope.Core                   (toText)
 import Antiope.S3                     (BucketName (..), ObjectKey (..), S3Uri (..))
+import Data.Aeson
 import Data.Semigroup                 ((<>))
 import HaskellWorks.Data.Uri.Location
 import HaskellWorks.Hspec.Hedgehog
@@ -40,24 +41,39 @@ localPath = do
 
 spec :: Spec
 spec = describe "HaskellWorks.Assist.LocationSpec" $ do
-  it "S3 should roundtrip from and to text" $ require $ property $ do
+  it "S3 should roundtrip from and to text" $ requireProperty $ do
     uri <- forAll s3Uri
     tripping (S3 uri) toText toLocation
 
-  it "LocalLocation should roundtrip from and to text" $ require $ property $ do
+  it "LocalLocation should roundtrip from and to text" $ requireProperty $ do
     path <- forAll localPath
     tripping (Local path) toText toLocation
 
-  it "Should append s3 path" $ require $ property $ do
+  it "Should append s3 path" $ requireProperty $ do
     loc  <- S3 <$> forAll s3Uri
     part <- forAll $ Gen.text (Range.linear 3 10) Gen.alphaNum
     ext  <- forAll $ Gen.text (Range.linear 2 4)  Gen.alphaNum
     toText (loc </> part <.> ext) === (toText loc) <> "/" <> part <> "." <> ext
     toText (loc </> ("/" <> part) <.> ("." <> ext)) === (toText loc) <> "/" <> part <> "." <> ext
 
-  it "Should append s3 path" $ require $ property $ do
+  it "Should append s3 path" $ requireProperty $ do
     loc  <- Local <$> forAll localPath
     part <- forAll $ Gen.string (Range.linear 3 10) Gen.alphaNum
     ext  <- forAll $ Gen.string (Range.linear 2 4)  Gen.alphaNum
     toText (loc </> Text.pack part <.> Text.pack ext) === Text.pack ((Text.unpack $ toText loc) FP.</> part FP.<.> ext)
 
+  it "S3 uri should encode/decode to JSON" $ requireTest $ do
+    let location = S3 (S3Uri "hello" "world")
+    fromJSON (toJSON location) === Success location
+
+  it "Local should encode/decode to JSON" $ requireTest $ do
+    let location = Local "/tmp/path"
+    fromJSON (toJSON location) === Success location
+
+  it "HttpUri should encode/decode to JSON 1" $ requireTest $ do
+    let location = HttpUri "http://tmp/path"
+    fromJSON (toJSON location) === Success location
+
+  it "HttpUri should encode/decode to JSON 2" $ requireTest $ do
+    let location = HttpUri "https://tmp/path"
+    fromJSON (toJSON location) === Success location

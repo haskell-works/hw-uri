@@ -81,6 +81,7 @@ test-suite hw-uri-test
           , antiope-core
           , antiope-s3
           , bytestring
+          , aeson
           , filepath
           , hedgehog
           , hspec
