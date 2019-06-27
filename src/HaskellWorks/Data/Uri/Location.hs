@@ -10,17 +10,18 @@ module HaskellWorks.Data.Uri.Location
   , toLocation
   ) where
 
-import Antiope.Core   (ToText (..), fromText)
-import Antiope.S3     (ObjectKey (..), S3Uri (..))
+import Antiope.Core         (ToText (..), fromText)
+import Antiope.S3           (ObjectKey (..), S3Uri (..))
+import Control.Applicative
 import Data.Aeson
-import Data.Maybe     (fromMaybe)
-import Data.Semigroup ((<>))
-import Data.Text      (Text)
-import GHC.Generics   (Generic)
-import Data.Aeson     (ToJSON)
+import Data.Maybe           (fromMaybe)
+import Data.Semigroup       ((<>))
+import Data.Text            (Text)
+import GHC.Generics         (Generic)
 
-import qualified Data.Text       as T
-import qualified System.FilePath as FP
+import qualified Data.Text        as T
+import qualified System.FilePath  as FP
+import qualified Data.Aeson.Types as J
 
 class IsPath a s | a -> s where
   (</>) :: a -> s -> a
@@ -40,6 +41,22 @@ instance ToJSON Location where
     S3 uri          -> toJSON uri
     Local filePath  -> toJSON filePath
     HttpUri text    -> toJSON text
+
+parseJsonLocal :: Value -> J.Parser FilePath
+parseJsonLocal (J.String v) = return (T.unpack v)
+parseJsonLocal v = J.typeMismatch ("FilePath (String)") v
+
+parseJsonHttpUri :: Value -> J.Parser Text
+parseJsonHttpUri v@(J.String s) = if T.isPrefixOf "http://" s || T.isPrefixOf "https://" s
+  then return s
+  else J.typeMismatch ("HttpUri (String)") v
+parseJsonHttpUri v = J.typeMismatch ("HttpUri (String)") v
+
+instance FromJSON Location where
+  parseJSON v =
+        (S3       <$> parseJSON        v)
+    <|> (HttpUri  <$> parseJsonHttpUri v)
+    <|> (Local    <$> parseJsonLocal   v)
 
 instance ToText Location where
   toText (S3 uri)       = toText uri
