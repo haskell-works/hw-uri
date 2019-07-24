@@ -24,11 +24,13 @@ import qualified System.FilePath  as FP
 import qualified Data.Aeson.Types as J
 
 class IsPath a s | a -> s where
-  (</>) :: a -> s -> a
-  (<.>) :: a -> s -> a
+  (</>)  :: a -> s -> a
+  (<.>)  :: a -> s -> a
+  (-<.>) :: a -> s -> a
 
 infixr 5 </>
 infixr 7 <.>
+infixl 4 -<.>
 
 data Location
   = S3 S3Uri
@@ -64,28 +66,37 @@ instance ToText Location where
   toText (HttpUri uri)  = uri
 
 instance IsPath Location Text where
-  (S3      b) </> p = S3      (b </>          p)
-  (Local   b) </> p = Local   (b </> T.unpack p)
-  (HttpUri b) </> p = HttpUri (b </>          p)
+  (S3      b) </>  p = S3      (b </>           p)
+  (Local   b) </>  p = Local   (b </>  T.unpack p)
+  (HttpUri b) </>  p = HttpUri (b </>           p)
 
-  (S3      b) <.> e = S3      (b <.>          e)
-  (Local   b) <.> e = Local   (b <.> T.unpack e)
-  (HttpUri b) <.> e = HttpUri (b <.>          e)
+  (S3      b) <.>  e = S3      (b <.>           e)
+  (Local   b) <.>  e = Local   (b <.>  T.unpack e)
+  (HttpUri b) <.>  e = HttpUri (b <.>           e)
+
+  (S3      b) -<.> e = S3      (b -<.>          e)
+  (Local   b) -<.> e = Local   (b -<.> T.unpack e)
+  (HttpUri b) -<.> e = HttpUri (b -<.>          e)
 
 instance IsPath Text Text where
-  b </> p = T.pack (T.unpack b FP.</> T.unpack p)
-  b <.> e = T.pack (T.unpack b FP.<.> T.unpack e)
+  b  </> p = T.pack (T.unpack b FP.</>  T.unpack p)
+  b  <.> e = T.pack (T.unpack b FP.<.>  T.unpack e)
+  b -<.> e = T.pack (T.unpack b FP.-<.> T.unpack e)
 
 instance (a ~ Char) => IsPath [a] [a] where
-  b </> p = b FP.</> p
-  b <.> e = b FP.<.> e
+  b  </> p = b FP.</>  p
+  b  <.> e = b FP.<.>  e
+  b -<.> e = b FP.-<.> e
 
 instance IsPath S3Uri Text where
-  S3Uri b (ObjectKey k) </> p =
+  S3Uri b (ObjectKey k) </>  p =
     S3Uri b (ObjectKey (stripEnd "/" k <> "/" <> stripStart "/" p))
 
-  S3Uri b (ObjectKey k) <.> e =
+  S3Uri b (ObjectKey k) <.>  e =
     S3Uri b (ObjectKey (stripEnd "." k <> "." <> stripStart "." e))
+
+  S3Uri b (ObjectKey k) -<.> e =
+    S3Uri b (ObjectKey (stripEnd "." (T.pack . (FP.-<.> (T.unpack $ stripStart "." e)) . T.unpack $ k)))
 
 toLocation :: Text -> Maybe Location
 toLocation txt = if

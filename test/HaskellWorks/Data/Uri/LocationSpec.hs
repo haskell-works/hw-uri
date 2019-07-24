@@ -56,11 +56,26 @@ spec = describe "HaskellWorks.Assist.LocationSpec" $ do
     toText (loc </> part <.> ext) === (toText loc) <> "/" <> part <> "." <> ext
     toText (loc </> ("/" <> part) <.> ("." <> ext)) === (toText loc) <> "/" <> part <> "." <> ext
 
-  it "Should append s3 path" $ requireProperty $ do
+  it "Should replace s3 path extension" $ requireProperty $ do
+    loc  <- S3 <$> forAll s3Uri
+    part <- forAll $ Gen.text (Range.linear 3 10) Gen.alphaNum
+    ext  <- forAll $ Gen.text (Range.linear 2 4)  Gen.alphaNum
+    ext' <- forAll $ Gen.text (Range.linear 2 4)  Gen.alphaNum
+    toText (loc </> part <.> ext -<.> ext') === (toText loc) <> "/" <> part <> "." <> ext'
+    toText (loc </> ("/" <> part) <.> ("." <> ext) -<.> ("." <> ext')) === (toText loc) <> "/" <> part <> "." <> ext'
+
+  it "Should append local path" $ requireProperty $ do
     loc  <- Local <$> forAll localPath
     part <- forAll $ Gen.string (Range.linear 3 10) Gen.alphaNum
     ext  <- forAll $ Gen.string (Range.linear 2 4)  Gen.alphaNum
     toText (loc </> Text.pack part <.> Text.pack ext) === Text.pack ((Text.unpack $ toText loc) FP.</> part FP.<.> ext)
+
+  it "Should replace local path extension" $ requireProperty $ do
+    loc  <- Local <$> forAll localPath
+    part <- forAll $ Gen.text (Range.linear 3 10) Gen.alphaNum
+    ext  <- forAll $ Gen.text (Range.linear 2 4)  Gen.alphaNum
+    ext' <- forAll $ Gen.text (Range.linear 2 4)  Gen.alphaNum
+    toText (loc </> part <.> ext -<.> ext') === (toText loc) <> "/" <> part <> "." <> ext'
 
   it "S3 uri should encode/decode to JSON" $ requireTest $ do
     let location = S3 (S3Uri "hello" "world")
