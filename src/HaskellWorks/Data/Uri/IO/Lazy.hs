@@ -9,6 +9,7 @@ module HaskellWorks.Data.Uri.IO.Lazy
   , firstExistingResource
   , headS3Uri
   , writeResource
+  , writeResource'
   , createLocalDirectoryIfMissing
   , linkOrCopyResource
   , readHttpUri
@@ -27,8 +28,8 @@ import HaskellWorks.Data.Uri.Location (Location (..))
 import HaskellWorks.Data.Uri.Show
 import HaskellWorks.Data.Uri.UriError
 
+import qualified Antiope.S3                       as AWS
 import qualified Antiope.S3.Lazy                  as AWS
-import qualified Antiope.S3.Types                 as AWS
 import qualified Control.Concurrent               as IO
 import qualified Data.ByteString.Lazy             as LBS
 import qualified Data.Text                        as T
@@ -126,10 +127,20 @@ uploadToS3 envAws (AWS.S3Uri b k) lbs = do
   let po  = AWS.putObject b k req
   handleAwsError $ runResAws envAws $ view AWS.porsETag <$> AWS.send po
 
+uploadToS3' :: (MonadUnliftIO m, MonadCatch m) => AWS.Env -> AWS.S3Uri -> FilePath -> m (Either UriError (Maybe AWS.ETag))
+uploadToS3' envAws uri fn =
+  handleAwsError $ runResAws envAws $ AWS.putFile' uri fn
+
 writeResource :: (MonadUnliftIO m, MonadCatch m) => AWS.Env -> Location -> LBS.ByteString -> ExceptT UriError m (Maybe AWS.ETag)
 writeResource envAws loc lbs = ExceptT $ case loc of
   S3 s3Uri   -> uploadToS3 envAws s3Uri lbs
   Local path -> liftIO (LBS.writeFile path lbs) >> return (Right Nothing)
+  HttpUri _  -> return (Left (GenericUriError "HTTP PUT method not supported"))
+
+writeResource' :: (MonadUnliftIO m, MonadCatch m) => AWS.Env -> Location -> FilePath -> ExceptT UriError m (Maybe AWS.ETag)
+writeResource' envAws loc fn = ExceptT $ case loc of
+  S3 s3Uri   -> uploadToS3' envAws s3Uri fn
+  Local path -> liftIO (LBS.readFile fn >>= LBS.writeFile path) >> return (Right Nothing)
   HttpUri _  -> return (Left (GenericUriError "HTTP PUT method not supported"))
 
 createLocalDirectoryIfMissing :: (MonadCatch m, MonadIO m) => Location -> m ()
