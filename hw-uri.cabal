@@ -95,7 +95,7 @@ test-suite hw-uri-test
   build-depends:        hw-uri
   hs-source-dirs:       test
   ghc-options:          -threaded -rtsopts -with-rtsopts=-N
-  build-tools:          hspec-discover
+  build-tool-depends:   hspec-discover:hspec-discover
   other-modules:
     HaskellWorks.Data.Uri.AwsSpec
     HaskellWorks.Data.Uri.LocationSpec
