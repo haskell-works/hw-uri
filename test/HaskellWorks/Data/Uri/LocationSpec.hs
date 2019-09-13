@@ -6,7 +6,7 @@ module HaskellWorks.Data.Uri.LocationSpec
   ) where
 
 import Antiope.Core                   (toText)
-import Antiope.S3                     (BucketName (..), ObjectKey (..), S3Uri (..))
+import Antiope.S3                     (S3Uri (..))
 import Data.Aeson
 import Data.Semigroup                 ((<>))
 import HaskellWorks.Data.Uri.Location
@@ -14,67 +14,52 @@ import HaskellWorks.Hspec.Hedgehog
 import Hedgehog
 import Test.Hspec
 
-import qualified Data.List       as List
-import qualified Data.Text       as Text
-import qualified Hedgehog.Gen    as Gen
-import qualified Hedgehog.Range  as Range
-import qualified System.FilePath as FP
+import qualified Data.Text                 as T
+import qualified HaskellWorks.Data.Uri.Gen as G
+import qualified Hedgehog.Gen              as G
+import qualified Hedgehog.Range            as R
+import qualified System.FilePath           as FP
 
 {-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
 {-# ANN module ("HLint: ignore Reduce duplication"  :: String) #-}
 {-# ANN module ("HLint: ignore Redundant bracket"   :: String) #-}
 
-s3Uri :: MonadGen m => m S3Uri
-s3Uri = do
-  let partGen = Gen.text (Range.linear 3 10) Gen.alphaNum
-  bkt <- partGen
-  parts <- Gen.list (Range.linear 1 5) partGen
-  ext <- Gen.text (Range.linear 2 4) Gen.alphaNum
-  pure $ S3Uri (BucketName bkt) (ObjectKey (Text.intercalate "/" parts <> "." <> ext))
-
-localPath :: MonadGen m => m FilePath
-localPath = do
-  let partGen = Gen.string (Range.linear 3 10) Gen.alphaNum
-  parts <- Gen.list (Range.linear 1 5) partGen
-  ext <- Gen.string (Range.linear 2 4) Gen.alphaNum
-  pure $ "/" <> List.intercalate "/" parts <> "." <> ext
-
 spec :: Spec
 spec = describe "HaskellWorks.Assist.LocationSpec" $ do
   it "S3 should roundtrip from and to text" $ requireProperty $ do
-    uri <- forAll s3Uri
+    uri <- forAll G.s3Uri
     tripping (S3 uri) toText toLocation
 
   it "LocalLocation should roundtrip from and to text" $ requireProperty $ do
-    path <- forAll localPath
+    path <- forAll G.localPath
     tripping (Local path) toText toLocation
 
   it "Should append s3 path" $ requireProperty $ do
-    loc  <- S3 <$> forAll s3Uri
-    part <- forAll $ Gen.text (Range.linear 3 10) Gen.alphaNum
-    ext  <- forAll $ Gen.text (Range.linear 2 4)  Gen.alphaNum
+    loc  <- S3 <$> forAll G.s3Uri
+    part <- forAll $ G.text (R.linear 3 10) G.alphaNum
+    ext  <- forAll $ G.text (R.linear 2 4)  G.alphaNum
     toText (loc </> part <.> ext) === (toText loc) <> "/" <> part <> "." <> ext
     toText (loc </> ("/" <> part) <.> ("." <> ext)) === (toText loc) <> "/" <> part <> "." <> ext
 
   it "Should replace s3 path extension" $ requireProperty $ do
-    loc  <- S3 <$> forAll s3Uri
-    part <- forAll $ Gen.text (Range.linear 3 10) Gen.alphaNum
-    ext  <- forAll $ Gen.text (Range.linear 2 4)  Gen.alphaNum
-    ext' <- forAll $ Gen.text (Range.linear 2 4)  Gen.alphaNum
+    loc  <- S3 <$> forAll G.s3Uri
+    part <- forAll $ G.text (R.linear 3 10) G.alphaNum
+    ext  <- forAll $ G.text (R.linear 2 4)  G.alphaNum
+    ext' <- forAll $ G.text (R.linear 2 4)  G.alphaNum
     toText (loc </> part <.> ext -<.> ext') === (toText loc) <> "/" <> part <> "." <> ext'
     toText (loc </> ("/" <> part) <.> ("." <> ext) -<.> ("." <> ext')) === (toText loc) <> "/" <> part <> "." <> ext'
 
   it "Should append local path" $ requireProperty $ do
-    loc  <- Local <$> forAll localPath
-    part <- forAll $ Gen.string (Range.linear 3 10) Gen.alphaNum
-    ext  <- forAll $ Gen.string (Range.linear 2 4)  Gen.alphaNum
-    toText (loc </> Text.pack part <.> Text.pack ext) === Text.pack ((Text.unpack $ toText loc) FP.</> part FP.<.> ext)
+    loc  <- Local <$> forAll G.localPath
+    part <- forAll $ G.string (R.linear 3 10) G.alphaNum
+    ext  <- forAll $ G.string (R.linear 2 4)  G.alphaNum
+    toText (loc </> T.pack part <.> T.pack ext) === T.pack ((T.unpack $ toText loc) FP.</> part FP.<.> ext)
 
   it "Should replace local path extension" $ requireProperty $ do
-    loc  <- Local <$> forAll localPath
-    part <- forAll $ Gen.text (Range.linear 3 10) Gen.alphaNum
-    ext  <- forAll $ Gen.text (Range.linear 2 4)  Gen.alphaNum
-    ext' <- forAll $ Gen.text (Range.linear 2 4)  Gen.alphaNum
+    loc  <- Local <$> forAll G.localPath
+    part <- forAll $ G.text (R.linear 3 10) G.alphaNum
+    ext  <- forAll $ G.text (R.linear 2 4)  G.alphaNum
+    ext' <- forAll $ G.text (R.linear 2 4)  G.alphaNum
     toText (loc </> part <.> ext -<.> ext') === (toText loc) <> "/" <> part <> "." <> ext'
 
   it "S3 uri should encode/decode to JSON" $ requireTest $ do
@@ -92,3 +77,7 @@ spec = describe "HaskellWorks.Assist.LocationSpec" $ do
   it "HttpUri should encode/decode to JSON 2" $ requireTest $ do
     let location = HttpUri "https://tmp/path"
     fromJSON (toJSON location) === Success location
+
+  it "dirname" $ requireTest $ do
+    location <- forAll G.location
+    dirname (location </> "x") === location
