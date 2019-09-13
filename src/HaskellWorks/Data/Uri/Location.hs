@@ -1,13 +1,16 @@
+{-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiWayIf             #-}
 {-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
 
 module HaskellWorks.Data.Uri.Location
   ( IsPath(..)
   , Location(..)
   , toLocation
+  , dirname
   ) where
 
 import Antiope.Core         (ToText (..), fromText)
@@ -22,6 +25,7 @@ import GHC.Generics         (Generic)
 import qualified Data.Text        as T
 import qualified System.FilePath  as FP
 import qualified Data.Aeson.Types as J
+import qualified Antiope.S3.Types as Z
 
 class IsPath a s | a -> s where
   (</>)  :: a -> s -> a
@@ -106,6 +110,12 @@ toLocation txt = if
   | T.isInfixOf  "://" txt'      -> Nothing
   | otherwise                       -> Just (Local (T.unpack txt'))
   where txt' = T.strip txt
+
+dirname :: Location -> Location
+dirname location = case location of
+  S3 s3Uri    -> S3 (Z.dirname s3Uri)
+  Local fp    -> Local (FP.takeDirectory fp)
+  HttpUri uri -> HttpUri (T.pack (FP.takeDirectory (T.unpack uri)))
 
 -------------------------------------------------------------------------------
 stripStart :: Text -> Text -> Text
