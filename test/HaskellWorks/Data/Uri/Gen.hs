@@ -7,20 +7,15 @@ module HaskellWorks.Data.Uri.Gen
   , localPath
   ) where
 
-import Antiope.Core                   (toText)
 import Antiope.S3                     (BucketName (..), ObjectKey (..), S3Uri (..))
-import Data.Aeson
 import Data.Semigroup                 ((<>))
 import HaskellWorks.Data.Uri.Location
-import HaskellWorks.Hspec.Hedgehog
-import Hedgehog
-import Test.Hspec
+import Hedgehog                       (MonadGen)
 
-import qualified Data.List       as L
-import qualified Data.Text       as T
-import qualified Hedgehog.Gen    as G
-import qualified Hedgehog.Range  as R
-import qualified System.FilePath as FP
+import qualified Data.List      as L
+import qualified Data.Text      as T
+import qualified Hedgehog.Gen   as G
+import qualified Hedgehog.Range as R
 
 {-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
 {-# ANN module ("HLint: ignore Reduce duplication"  :: String) #-}
