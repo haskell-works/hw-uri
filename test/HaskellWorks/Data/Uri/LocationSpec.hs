@@ -1,5 +1,6 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module HaskellWorks.Data.Uri.LocationSpec
   ( spec
@@ -7,8 +8,11 @@ module HaskellWorks.Data.Uri.LocationSpec
 
 import Antiope.Core                   (toText)
 import Antiope.S3                     (S3Uri (..))
+import Control.Lens                   ((&))
 import Data.Aeson
+import Data.Maybe
 import Data.Semigroup                 ((<>))
+import Data.Text                      (Text)
 import HaskellWorks.Data.Uri.Location
 import HaskellWorks.Hspec.Hedgehog
 import Hedgehog
@@ -81,3 +85,40 @@ spec = describe "HaskellWorks.Assist.LocationSpec" $ do
   it "dirname" $ requireTest $ do
     location <- forAll G.location
     dirname (location </> "x") === location
+
+  it "modPath" $ requireTest $ do
+    let input     :: Location = fromJust (toLocation ("s3://bucket/object/key.ext"))
+    let actual    :: Location = input & modPath T.toUpper
+    let expected  :: Location = fromJust (toLocation ("s3://bucket/OBJECT/KEY.EXT"))
+    actual === expected
+
+  it "getPath" $ requireTest $ do
+    let input     :: Location = fromJust (toLocation ("s3://bucket/object/key.ext"))
+    let actual    :: Text     = input & getPath
+    let expected  :: Text     = "object/key.ext"
+    actual === expected
+
+  it "modBasename" $ requireTest $ do
+    let input     :: Location = fromJust (toLocation ("s3://bucket/object/key.ext"))
+    let actual    :: Location = input & modBasename T.toUpper
+    let expected  :: Location = fromJust (toLocation ("s3://bucket/object/KEY.EXT"))
+    actual === expected
+
+  it "modBasenameParts" $ requireTest $ do
+    let input     :: Location = fromJust (toLocation ("s3://bucket/object/ab.cd.ef"))
+    let actual    :: Location = input & modBasenameParts (reverse . drop 1)
+    let expected  :: Location = fromJust (toLocation ("s3://bucket/object/ef.cd"))
+    actual === expected
+
+  it "modBasenamePartsReversed" $ requireTest $ do
+    let input     :: Location = fromJust (toLocation ("s3://bucket/object/ab.cd.ef"))
+    let actual    :: Location = input & modBasenamePartsReversed (drop 1)
+    let expected  :: Location = fromJust (toLocation ("s3://bucket/object/ab.cd"))
+    actual === expected
+
+  it "modExts" $ requireTest $ do
+    let input     :: Location = fromJust (toLocation ("s3://bucket/object/ab.cd.ef"))
+    let actual    :: Location = input & modExts ["cd", "ef"] ["gh", "ij"]
+    let expected  :: Location = fromJust (toLocation ("s3://bucket/object/ab.gh.ij"))
+    actual === expected
+

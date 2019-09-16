@@ -67,6 +67,8 @@ library
   autogen-modules:      Paths_hw_uri
   hs-source-dirs:       src
   exposed-modules:      HaskellWorks.Data.Uri.AWS.Env
+                        HaskellWorks.Data.Uri.Internal.List
+                        HaskellWorks.Data.Uri.Internal.Text
                         HaskellWorks.Data.Uri.IO.Console
                         HaskellWorks.Data.Uri.IO.Error
                         HaskellWorks.Data.Uri.IO.File
