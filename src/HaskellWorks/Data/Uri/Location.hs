@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE MultiWayIf             #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE TypeApplications       #-}
@@ -10,22 +11,25 @@ module HaskellWorks.Data.Uri.Location
   ( IsPath(..)
   , Location(..)
   , toLocation
+  , basename
   , dirname
   ) where
 
-import Antiope.Core         (ToText (..), fromText)
-import Antiope.S3           (ObjectKey (..), S3Uri (..))
+import Antiope.Core              (ToText (..), fromText)
+import Antiope.S3                (ObjectKey (..), S3Uri (..))
 import Control.Applicative
+import Control.Lens              ((^.))
 import Data.Aeson
-import Data.Maybe           (fromMaybe)
-import Data.Semigroup       ((<>))
-import Data.Text            (Text)
-import GHC.Generics         (Generic)
+import Data.Generics.Product.Any
+import Data.Maybe                (fromMaybe)
+import Data.Semigroup            ((<>))
+import Data.Text                 (Text)
+import GHC.Generics              (Generic)
 
+import qualified Antiope.S3.Types as Z
+import qualified Data.Aeson.Types as J
 import qualified Data.Text        as T
 import qualified System.FilePath  as FP
-import qualified Data.Aeson.Types as J
-import qualified Antiope.S3.Types as Z
 
 class IsPath a s | a -> s where
   (</>)  :: a -> s -> a
@@ -44,13 +48,13 @@ data Location
 
 instance ToJSON Location where
   toJSON v = case v of
-    S3 uri          -> toJSON uri
-    Local filePath  -> toJSON filePath
-    HttpUri text    -> toJSON text
+    S3 uri         -> toJSON uri
+    Local filePath -> toJSON filePath
+    HttpUri text   -> toJSON text
 
 parseJsonLocal :: Value -> J.Parser FilePath
 parseJsonLocal (J.String v) = return (T.unpack v)
-parseJsonLocal v = J.typeMismatch ("FilePath (String)") v
+parseJsonLocal v            = J.typeMismatch ("FilePath (String)") v
 
 parseJsonHttpUri :: Value -> J.Parser Text
 parseJsonHttpUri v@(J.String s) = if T.isPrefixOf "http://" s || T.isPrefixOf "https://" s
@@ -65,9 +69,9 @@ instance FromJSON Location where
     <|> (Local    <$> parseJsonLocal   v)
 
 instance ToText Location where
-  toText (S3 uri)       = toText uri
-  toText (Local p)      = T.pack p
-  toText (HttpUri uri)  = uri
+  toText (S3 uri)      = toText uri
+  toText (Local p)     = T.pack p
+  toText (HttpUri uri) = uri
 
 instance IsPath Location Text where
   (S3      b) </>  p = S3      (b </>           p)
@@ -116,6 +120,12 @@ dirname location = case location of
   S3 s3Uri    -> S3 (Z.dirname s3Uri)
   Local fp    -> Local (FP.takeDirectory fp)
   HttpUri uri -> HttpUri (T.pack (FP.takeDirectory (T.unpack uri)))
+
+basename :: Location -> Text
+basename location = case location of
+  S3 s3Uri    -> T.pack . FP.takeFileName $ T.unpack (toText (s3Uri ^. the @"objectKey"))
+  Local fp    -> T.pack $ FP.takeFileName fp
+  HttpUri uri -> T.pack . FP.takeFileName $ T.unpack uri
 
 -------------------------------------------------------------------------------
 stripStart :: Text -> Text -> Text
