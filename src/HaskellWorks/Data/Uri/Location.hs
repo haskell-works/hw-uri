@@ -13,23 +13,31 @@ module HaskellWorks.Data.Uri.Location
   , toLocation
   , basename
   , dirname
+  , modPath
+  , getPath
+  , modBasename
+  , modBasenameParts
+  , modBasenamePartsReversed
+  , modExts
   ) where
 
 import Antiope.Core              (ToText (..), fromText)
 import Antiope.S3                (ObjectKey (..), S3Uri (..))
 import Control.Applicative
-import Control.Lens              ((^.))
+import Control.Lens              ((%~), (&), (^.))
 import Data.Aeson
 import Data.Generics.Product.Any
-import Data.Maybe                (fromMaybe)
 import Data.Semigroup            ((<>))
 import Data.Text                 (Text)
 import GHC.Generics              (Generic)
 
-import qualified Antiope.S3.Types as Z
-import qualified Data.Aeson.Types as J
-import qualified Data.Text        as T
-import qualified System.FilePath  as FP
+import qualified Antiope.S3.Types                    as Z
+import qualified Data.Aeson.Types                    as J
+import qualified Data.List                           as L
+import qualified Data.Text                           as T
+import qualified HaskellWorks.Data.Uri.Internal.List as L
+import qualified HaskellWorks.Data.Uri.Internal.Text as T
+import qualified System.FilePath                     as FP
 
 class IsPath a s | a -> s where
   (</>)  :: a -> s -> a
@@ -98,13 +106,13 @@ instance (a ~ Char) => IsPath [a] [a] where
 
 instance IsPath S3Uri Text where
   S3Uri b (ObjectKey k) </>  p =
-    S3Uri b (ObjectKey (stripEnd "/" k <> "/" <> stripStart "/" p))
+    S3Uri b (ObjectKey (T.maybeStripSuffix "/" k <> "/" <> T.maybeStripPrefix "/" p))
 
   S3Uri b (ObjectKey k) <.>  e =
-    S3Uri b (ObjectKey (stripEnd "." k <> "." <> stripStart "." e))
+    S3Uri b (ObjectKey (T.maybeStripSuffix "." k <> "." <> T.maybeStripPrefix "." e))
 
   S3Uri b (ObjectKey k) -<.> e =
-    S3Uri b (ObjectKey (stripEnd "." (T.pack . (FP.-<.> (T.unpack $ stripStart "." e)) . T.unpack $ k)))
+    S3Uri b (ObjectKey (T.maybeStripSuffix "." (T.pack . (FP.-<.> (T.unpack $ T.maybeStripPrefix "." e)) . T.unpack $ k)))
 
 toLocation :: Text -> Maybe Location
 toLocation txt = if
@@ -127,9 +135,31 @@ basename location = case location of
   Local fp    -> T.pack $ FP.takeFileName fp
   HttpUri uri -> T.pack . FP.takeFileName $ T.unpack uri
 
--------------------------------------------------------------------------------
-stripStart :: Text -> Text -> Text
-stripStart what txt = fromMaybe txt (T.stripPrefix what txt)
+modPath :: (Text -> Text) -> Location -> Location
+modPath f location = case location of
+  S3 s3Uri    -> S3 (s3Uri & the @"objectKey" . the @1 %~ f)
+  Local fp    -> Local (T.unpack (f (T.pack fp)))
+  HttpUri uri -> HttpUri (f uri)
 
-stripEnd :: Text -> Text -> Text
-stripEnd what txt = fromMaybe txt (T.stripSuffix what txt)
+getPath :: Location -> Text
+getPath location = case location of
+  S3 s3Uri    -> s3Uri ^. the @"objectKey" . the @1
+  Local fp    -> T.pack fp
+  HttpUri uri -> uri
+
+modBasename :: (Text -> Text) -> Location -> Location
+modBasename f = modPath g
+  where g path = T.intercalate "/" (L.mapLast f (T.splitOn "/" path))
+
+modBasenameParts :: ([Text] -> [Text]) -> Location -> Location
+modBasenameParts f = modBasename (T.intercalate "." . f . T.splitOn ".")
+
+modBasenamePartsReversed :: ([Text] -> [Text]) -> Location -> Location
+modBasenamePartsReversed f = modBasenameParts (reverse . f . reverse)
+
+modExts :: [Text] -> [Text] -> Location -> Location
+modExts fromExts toExts = modBasenameParts f
+  where f :: [Text] -> [Text]
+        f as = if L.isSuffixOf fromExts as
+          then (reverse (drop (length fromExts) (reverse as))) <> toExts
+          else as
