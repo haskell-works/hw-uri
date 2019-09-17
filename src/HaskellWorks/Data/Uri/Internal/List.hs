@@ -9,6 +9,6 @@ mapLast _ []     = []
 mapLast f (a:as) = a:mapLast f as
 
 dropSave1 :: [a] -> [a]
-dropSave1 (_:xs) = xs
 dropSave1 [x]    = [x]
+dropSave1 (_:xs) = xs
 dropSave1 []     = []
