@@ -56,7 +56,7 @@ handleAwsError f = catch (Right <$> f) $ \(e :: AWS.Error) ->
     (AWS.ServiceError (AWS.ServiceError' _ s@(HTTP.Status 301 _) _ _ _ _)) -> return (Left (AwsUriError s))
     _                                                                      -> throwM e
 
-handleHttpError :: (MonadCatch m, MonadIO m) => m a -> m (Either UriError a)
+handleHttpError :: MonadCatch m => m a -> m (Either UriError a)
 handleHttpError f = catch (Right <$> f) $ \(e :: HTTP.HttpException) ->
   case e of
     (HTTP.HttpExceptionRequest _ e') -> case e' of
@@ -94,7 +94,7 @@ safePathIsSymbolLink filePath = catch (IO.pathIsSymbolicLink filePath) handler
           then return False
           else return True
 
-resourceExists :: (MonadUnliftIO m, MonadCatch m, MonadIO m) => AWS.Env -> Location -> m Bool
+resourceExists :: (MonadUnliftIO m, MonadCatch m) => AWS.Env -> Location -> m Bool
 resourceExists envAws = \case
   S3 s3Uri        -> isRight <$> runResourceT (headS3Uri envAws s3Uri)
   HttpUri httpUri -> isRight <$> headHttpUri httpUri
@@ -110,7 +110,7 @@ resourceExists envAws = \case
             resourceExists envAws (Local target)
           else return False
 
-firstExistingResource :: (MonadUnliftIO m, MonadCatch m, MonadIO m) => AWS.Env -> [Location] -> m (Maybe Location)
+firstExistingResource :: (MonadUnliftIO m, MonadCatch m) => AWS.Env -> [Location] -> m (Maybe Location)
 firstExistingResource _ [] = return Nothing
 firstExistingResource envAws (a:as) = do
   exists <- resourceExists envAws a
