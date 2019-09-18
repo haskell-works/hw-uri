@@ -9,6 +9,7 @@ module HaskellWorks.Data.Uri.IO.Lazy
   , firstExistingResource
   , headS3Uri
   , writeResource
+  , writeResourceWithParent
   , writeResource'
   , createLocalDirectoryIfMissing
   , linkOrCopyResource
@@ -34,6 +35,7 @@ import qualified Control.Concurrent               as IO
 import qualified Data.ByteString.Lazy             as LBS
 import qualified Data.Text                        as T
 import qualified HaskellWorks.Data.Uri.IO.Console as CIO
+import qualified HaskellWorks.Data.Uri.Location   as URI
 import qualified Network.AWS                      as AWS
 import qualified Network.AWS.S3.CopyObject        as AWS
 import qualified Network.AWS.S3.HeadObject        as AWS
@@ -131,11 +133,19 @@ uploadToS3' :: (MonadUnliftIO m, MonadCatch m) => AWS.Env -> AWS.S3Uri -> FilePa
 uploadToS3' envAws uri fn =
   handleAwsError $ runResAws envAws $ AWS.putFile' uri fn
 
+-- | Write a lazy bytestring to a location
 writeResource :: (MonadUnliftIO m, MonadCatch m) => AWS.Env -> Location -> LBS.ByteString -> ExceptT UriError m (Maybe AWS.ETag)
 writeResource envAws loc lbs = ExceptT $ case loc of
   S3 s3Uri   -> uploadToS3 envAws s3Uri lbs
   Local path -> liftIO (LBS.writeFile path lbs) >> return (Right Nothing)
   HttpUri _  -> return (Left (GenericUriError "HTTP PUT method not supported"))
+
+-- | Write a lazy bytestring to a location, creating the parent directory if necessary.
+writeResourceWithParent :: (MonadUnliftIO m, MonadCatch m) => AWS.Env -> Location -> LBS.ByteString -> ExceptT UriError m (Maybe AWS.ETag)
+writeResourceWithParent envAws location lbs = do
+  let parent = URI.dirname location
+  createLocalDirectoryIfMissing parent
+  writeResource envAws location lbs
 
 writeResource' :: (MonadUnliftIO m, MonadCatch m) => AWS.Env -> Location -> FilePath -> ExceptT UriError m (Maybe AWS.ETag)
 writeResource' envAws loc fn = ExceptT $ case loc of
