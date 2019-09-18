@@ -1,7 +1,8 @@
 module App.Commands where
 
 import App.Commands.Cp
-import Data.Semigroup      ((<>))
+import App.Commands.PutFile
+import Data.Semigroup       ((<>))
 import Options.Applicative
 
 commands :: Parser (IO ())
@@ -11,3 +12,4 @@ commandsGeneral :: Parser (IO ())
 commandsGeneral = subparser $ mempty
   <>  commandGroup "Commands:"
   <>  cmdCp
+  <>  cmdPutFile

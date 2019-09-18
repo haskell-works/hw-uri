@@ -85,6 +85,7 @@ executable hw-uri
   import:               base, config
                       , antiope-core
                       , antiope-optparse-applicative
+                      , antiope-s3
                       , bytestring
                       , generic-lens
                       , lens
@@ -99,6 +100,7 @@ executable hw-uri
   other-modules:        App.Aws.Logger
                         App.Commands
                         App.Commands.Cp
+                        App.Commands.PutFile
                         App.Commands.Types
                         App.Show
 
