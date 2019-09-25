@@ -18,6 +18,7 @@ module HaskellWorks.Data.Uri.IO.Lazy
   , readHttpUri
   , removePathRecursive
   , listResourcePrefix
+  , deleteResource
   ) where
 
 import Antiope.Core
@@ -238,4 +239,13 @@ listResourcePrefix :: (MonadUnliftIO m, MonadResource m) => AWS.Env -> Location 
 listResourcePrefix envAws location = case location of
   S3 s3Uri   -> fmap S3 <$> runAws envAws (AWS.lsPrefix (s3Uri ^. the @"bucket") (s3Uri ^. the @"objectKey" . the @1))
   Local path -> fmap Local <$> lift (FIO.listFilesRecursiveWithPrefix path)
-  HttpUri _  -> throwError "HTTP PUT method not supported"
+  HttpUri _  -> throwError "HTTP method not supported"
+
+deleteResource :: MonadResource m => AWS.Env -> Location -> ExceptT UriError m ()
+deleteResource envAws location = case location of
+  S3 s3Uri        -> do
+    result <- runAws envAws $ AWS.deleteFiles (s3Uri ^. the @"bucket") [s3Uri ^. the @"objectKey"]
+    when (result /= [s3Uri]) $ throwError $ DeleteFailed (tshow location)
+  Local path      -> liftIO $ IO.removeFile path
+  HttpUri _ -> throwError "HTTP method not supported"
+
