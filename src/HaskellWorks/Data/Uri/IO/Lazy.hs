@@ -1,6 +1,8 @@
+{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module HaskellWorks.Data.Uri.IO.Lazy
   ( readResource
@@ -15,6 +17,7 @@ module HaskellWorks.Data.Uri.IO.Lazy
   , linkOrCopyResource
   , readHttpUri
   , removePathRecursive
+  , listResourcePrefix
   ) where
 
 import Antiope.Core
@@ -23,6 +26,7 @@ import Control.Monad.Catch
 import Control.Monad.Except
 import Control.Monad.Trans.Resource
 import Data.Either                    (isRight)
+import Data.Generics.Product.Any
 import Data.Semigroup                 ((<>))
 import Data.Text                      (Text)
 import HaskellWorks.Data.Uri.Location (Location (..))
@@ -35,6 +39,7 @@ import qualified Control.Concurrent               as IO
 import qualified Data.ByteString.Lazy             as LBS
 import qualified Data.Text                        as T
 import qualified HaskellWorks.Data.Uri.IO.Console as CIO
+import qualified HaskellWorks.Data.Uri.IO.File    as FIO
 import qualified HaskellWorks.Data.Uri.Location   as URI
 import qualified Network.AWS                      as AWS
 import qualified Network.AWS.S3.CopyObject        as AWS
@@ -228,3 +233,9 @@ removePathRecursive pkgStorePath = catch action handler
         handler e = do
           CIO.hPutStrLn IO.stderr $ "Warning: Caught " <> tshow e
           return (Left (GenericUriError (tshow e)))
+
+listResourcePrefix :: (MonadUnliftIO m, MonadResource m) => AWS.Env -> Location -> ExceptT UriError m [Location]
+listResourcePrefix envAws location = case location of
+  S3 s3Uri   -> fmap S3 <$> runAws envAws (AWS.lsPrefix (s3Uri ^. the @"bucket") (s3Uri ^. the @"objectKey" . the @1))
+  Local path -> fmap Local <$> lift (FIO.listFilesRecursiveWithPrefix path)
+  HttpUri _  -> throwError "HTTP PUT method not supported"
