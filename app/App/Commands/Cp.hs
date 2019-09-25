@@ -24,6 +24,7 @@ import qualified App.Commands.Types            as Z
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as TIO
 import qualified HaskellWorks.Data.Uri.IO.Lazy as URI
+import qualified System.Exit                   as IO
 import qualified System.IO                     as IO
 import qualified System.IO.Unsafe              as IO
 
@@ -41,13 +42,13 @@ runCp opts = do
 
     case lbsResult of
       Right lbs -> void $ URI.writeResource envAws output lbs
-      Left msg  -> return ()
-
-    return ()
+      Left _    -> throwError "Copy failed"
 
   case result of
     Right _  -> return ()
-    Left msg -> TIO.hPutStrLn IO.stderr (displayUriError msg)
+    Left msg -> do
+      TIO.hPutStrLn IO.stderr (displayUriError msg)
+      IO.exitFailure
 
 optsCp :: Parser Z.CpOptions
 optsCp = Z.CpOptions

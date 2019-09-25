@@ -24,6 +24,7 @@ data UriError
     }
   | RetriesFailedUriError
   | NotFound
+  | DeleteFailed Text
   | GenericUriError Text
   deriving (Eq, Show, Generic)
 
