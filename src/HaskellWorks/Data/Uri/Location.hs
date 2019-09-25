@@ -19,6 +19,7 @@ module HaskellWorks.Data.Uri.Location
   , modBasenameParts
   , modBasenamePartsReversed
   , modExts
+  , withoutPrefix
   ) where
 
 import Antiope.Core              (ToText (..), fromText)
@@ -163,3 +164,17 @@ modExts fromExts toExts = modBasenameParts f
         f as = if L.isSuffixOf fromExts as
           then (reverse (drop (length fromExts) (reverse as))) <> toExts
           else as
+
+withoutPrefix :: Location -> Location -> Maybe Text
+withoutPrefix prefix location = case (prefix, location) of
+  (S3 prefixUri, S3 locationUri) -> if prefixUri ^. the @"bucket" == locationUri ^. the @"bucket"
+    then  let locationKey = locationUri ^. the @"objectKey" . the @1
+              prefixKey   = prefixUri   ^. the @"objectKey" . the @1
+          in if prefixKey `T.isPrefixOf` locationKey
+            then Just (T.drop (T.length prefixKey) locationKey)
+            else Nothing
+    else Nothing
+  (Local prefixUri, Local locationUri) -> if prefixUri `L.isPrefixOf` locationUri
+    then Just (T.pack (drop (length prefixUri) locationUri))
+    else Nothing
+  _ -> Nothing
