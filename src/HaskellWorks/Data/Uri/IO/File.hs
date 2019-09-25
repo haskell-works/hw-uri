@@ -40,16 +40,21 @@ listFilesRecursive filePath = do
   qs <- fmap concat $ IO.interleaveSequenceM $ fmap (recurse filePath) ps
   let rs = if filePath /= "." then fmap (filePath </>) qs else qs
   return rs
+  where go :: (MonadIO m, MonadUnliftIO m) => FilePath -> FilePath -> m [FilePath]
+        go filePath dir = do
+          ps <- listDirectory filePath
+          qs <- fmap concat $ IO.interleaveSequenceM $ fmap (recurse filePath) ps
+          return (fmap (dir </>) qs)
 
-recurse :: (MonadIO m, MonadUnliftIO m) => FilePath -> FilePath -> m [FilePath]
-recurse filePath p = do
-  isDirectory <- liftIO $ IO.doesDirectoryExist (filePath </> p)
-  if isDirectory
-    then case filePath </> p of
-      subPath -> if "./" `L.isPrefixOf` subPath
-        then listFilesRecursive (drop 2 subPath)
-        else listFilesRecursive subPath
-    else return [p]
+        recurse :: (MonadIO m, MonadUnliftIO m) => FilePath -> FilePath -> m [FilePath]
+        recurse filePath p = do
+          isDirectory <- liftIO $ IO.doesDirectoryExist (filePath </> p)
+          if isDirectory
+            then case filePath </> p of
+              subPath -> if "./" `L.isPrefixOf` subPath
+                then go (drop 2 subPath) p
+                else go subPath p
+            else return [p]
 
 listFilesRecursiveWithPrefix :: (MonadIO m, MonadUnliftIO m) => FilePath -> m [FilePath]
 listFilesRecursiveWithPrefix prefix = if '/' `elem` prefix
