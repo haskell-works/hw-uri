@@ -1,7 +1,7 @@
 cabal-version:          2.4
 
 name:                   hw-uri
-version:                0.1.1.4
+version:                0.1.1.5
 synopsis:               Supports IO on URIs
 description:            Supports IO on URIs.
 homepage:               https://github.com/haskell-works/hw-uri
