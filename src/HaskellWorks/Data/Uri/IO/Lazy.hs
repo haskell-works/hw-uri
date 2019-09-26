@@ -35,9 +35,10 @@ import HaskellWorks.Data.Uri.Show
 import HaskellWorks.Data.Uri.UriError
 
 import qualified Antiope.S3                       as AWS
-import qualified Antiope.S3.Lazy                  as AWS
+import qualified Antiope.S3.Lazy                  as AWSL
 import qualified Control.Concurrent               as IO
 import qualified Data.ByteString.Lazy             as LBS
+import qualified Data.DList                       as DL
 import qualified Data.Text                        as T
 import qualified HaskellWorks.Data.Uri.IO.Console as CIO
 import qualified HaskellWorks.Data.Uri.IO.File    as FIO
@@ -73,7 +74,7 @@ handleHttpError f = catch (Right <$> f) $ \(e :: HTTP.HttpException) ->
     _                                 -> throwM e
 
 getS3Uri :: (MonadResource m, MonadCatch m) => AWS.Env -> AWS.S3Uri -> m (Either UriError LBS.ByteString)
-getS3Uri envAws (AWS.S3Uri b k) = handleAwsError $ runAws envAws $ AWS.unsafeDownload b k
+getS3Uri envAws (AWS.S3Uri b k) = handleAwsError $ runAws envAws $ AWSL.unsafeDownload b k
 
 readResource :: (MonadResource m, MonadCatch m) => AWS.Env -> Location -> m (Either UriError LBS.ByteString)
 readResource envAws = \case
@@ -237,7 +238,7 @@ removePathRecursive pkgStorePath = catch action handler
 
 listResourcePrefix :: (MonadUnliftIO m, MonadResource m) => AWS.Env -> Location -> ExceptT UriError m [Location]
 listResourcePrefix envAws location = case location of
-  S3 s3Uri   -> fmap S3 <$> runAws envAws (AWS.lsPrefix (s3Uri ^. the @"bucket") (s3Uri ^. the @"objectKey" . the @1))
+  S3 s3Uri   -> fmap S3 . DL.toList <$> runAws envAws (AWSL.dlistS3Uris (AWSL.s3UriToListObjectsV2 s3Uri))
   Local path -> fmap Local <$> lift (FIO.listFilesRecursiveWithPrefix path)
   HttpUri _  -> throwError "HTTP method not supported"
 
@@ -248,4 +249,3 @@ deleteResource envAws location = case location of
     when (result /= [s3Uri]) $ throwError $ DeleteFailed (tshow location)
   Local path      -> liftIO $ IO.removeFile path
   HttpUri _ -> throwError "HTTP method not supported"
-
