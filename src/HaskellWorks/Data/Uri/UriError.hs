@@ -7,6 +7,7 @@ module HaskellWorks.Data.Uri.UriError
   , uriErrorStatus
   ) where
 
+import Data.Semigroup             ((<>))
 import Data.String
 import Data.Text                  (Text)
 import GHC.Generics
@@ -37,6 +38,7 @@ displayUriError (HttpUriError s)      = tshow s
 displayUriError RetriesFailedUriError = "Multiple retries failed"
 displayUriError NotFound              = "Not found"
 displayUriError (GenericUriError msg) = msg
+displayUriError (DeleteFailed msg)    = "Delete failed: " <> msg
 
 uriErrorStatus :: UriError -> Maybe Int
 uriErrorStatus (AwsUriError (HTTP.Status statusCode _)) = Just statusCode

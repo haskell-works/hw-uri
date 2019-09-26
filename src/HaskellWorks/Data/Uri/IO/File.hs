@@ -41,16 +41,16 @@ listFilesRecursive filePath = do
   let rs = if filePath /= "." then fmap (filePath </>) qs else qs
   return rs
   where go :: (MonadIO m, MonadUnliftIO m) => FilePath -> FilePath -> m [FilePath]
-        go filePath dir = do
-          ps <- listDirectory filePath
-          qs <- fmap concat $ IO.interleaveSequenceM $ fmap (recurse filePath) ps
+        go fp dir = do
+          ps <- listDirectory fp
+          qs <- fmap concat $ IO.interleaveSequenceM $ fmap (recurse fp) ps
           return (fmap (dir </>) qs)
 
         recurse :: (MonadIO m, MonadUnliftIO m) => FilePath -> FilePath -> m [FilePath]
-        recurse filePath p = do
-          isDirectory <- liftIO $ IO.doesDirectoryExist (filePath </> p)
+        recurse fp p = do
+          isDirectory <- liftIO $ IO.doesDirectoryExist (fp </> p)
           if isDirectory
-            then case filePath </> p of
+            then case fp </> p of
               subPath -> if "./" `L.isPrefixOf` subPath
                 then go (drop 2 subPath) p
                 else go subPath p
