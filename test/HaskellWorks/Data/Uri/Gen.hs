@@ -1,17 +1,25 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module HaskellWorks.Data.Uri.Gen
   ( bucketName
   , s3Uri
+  , s3UriWithObjectKey
+  , s3UriWithoutObjectKey
   , location
+  , locationWithoutObjectKey
+  , locationWithObjectKey
   , localPath
   ) where
 
-import Antiope.S3                     (BucketName (..), ObjectKey (..), S3Uri (..))
+import Antiope.S3                     (BucketName (..), ObjectKey (ObjectKey), S3Uri (S3Uri))
+import Control.Lens                   hiding (parts)
+import Data.Generics.Product.Any
+import Data.Maybe
 import Data.Semigroup                 ((<>))
 import Data.Text                      (Text)
-import HaskellWorks.Data.Uri.Location
+import HaskellWorks.Data.Uri.Location hiding (basename)
 import Hedgehog                       (MonadGen)
 
 import qualified Data.List      as L
@@ -26,23 +34,28 @@ import qualified Hedgehog.Range as R
 bucketName :: MonadGen m => m BucketName
 bucketName = BucketName <$> G.text (R.linear 3 10) G.alphaNum
 
-baseName :: MonadGen m => m Text
-baseName = G.text (R.linear 3 10) G.alphaNum
+basename :: MonadGen m => m Text
+basename = G.text (R.linear 0 10) G.alphaNum
+
+nonEmptyObjectKey :: MonadGen m => m ObjectKey
+nonEmptyObjectKey = do
+  basenames <- G.list (R.linear 2 5) basename
+  return (ObjectKey (T.intercalate "/" basenames))
 
 s3UriWithObjectKey :: MonadGen m => m S3Uri
 s3UriWithObjectKey = do
   bkt       <- bucketName
-  basenames <- G.list (R.linear 1 5) baseName
-  ext       <- G.text (R.linear 2 4) G.alphaNum
-  pure $ S3Uri bkt (ObjectKey (T.intercalate "/" basenames <> "." <> ext))
+  objectKey <- nonEmptyObjectKey
+  maybeExt  <- G.choice [Just <$> G.text (R.linear 2 4) G.alphaNum, return Nothing]
+  pure $ S3Uri bkt (objectKey & the @1 %~ (\k -> k <> fromMaybe "" (fmap ("." <>) maybeExt)))
 
-s3UriWithout :: MonadGen m => m S3Uri
-s3UriWithout = do
+s3UriWithoutObjectKey :: MonadGen m => m S3Uri
+s3UriWithoutObjectKey = do
   bkt       <- bucketName
   pure $ S3Uri bkt ""
 
 s3Uri :: MonadGen m => m S3Uri
-s3Uri = G.choice [s3UriWithout, s3UriWithObjectKey]
+s3Uri = G.choice [s3UriWithoutObjectKey, s3UriWithObjectKey]
 
 localPath :: MonadGen m => m FilePath
 localPath = do
@@ -54,6 +67,20 @@ localPath = do
 location :: MonadGen m => m Location
 location = G.choice
   [ S3                                <$> s3Uri
+  , Local                             <$> localPath
+  , HttpUri . ("http://" <>) . T.pack <$> localPath
+  ]
+
+locationWithoutObjectKey :: MonadGen m => m Location
+locationWithoutObjectKey = G.choice
+  [ S3                                <$> s3UriWithoutObjectKey
+  , Local                             <$> localPath
+  , HttpUri . ("http://" <>) . T.pack <$> localPath
+  ]
+
+locationWithObjectKey :: MonadGen m => m Location
+locationWithObjectKey = G.choice
+  [ S3                                <$> s3UriWithObjectKey
   , Local                             <$> localPath
   , HttpUri . ("http://" <>) . T.pack <$> localPath
   ]

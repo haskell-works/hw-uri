@@ -1,6 +1,8 @@
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE MultiWayIf          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module HaskellWorks.Data.Uri.LocationSpec
   ( spec
@@ -8,8 +10,9 @@ module HaskellWorks.Data.Uri.LocationSpec
 
 import Antiope.Core                   (toText)
 import Antiope.S3                     (S3Uri (..))
-import Control.Lens                   ((&))
+import Control.Lens                   ((&), (^.))
 import Data.Aeson
+import Data.Generics.Product.Any
 import Data.Maybe
 import Data.Semigroup                 ((<>))
 import Data.Text                      (Text)
@@ -38,20 +41,45 @@ spec = describe "HaskellWorks.Assist.LocationSpec" $ do
     path <- forAll G.localPath
     tripping (Local path) toText toLocation
 
-  it "Should append s3 path" $ requireProperty $ do
-    loc  <- S3 <$> forAll G.s3Uri
+  it "Should append s3 path to s3uri with object key" $ requireProperty $ do
+    loc  <- S3 <$> forAll G.s3UriWithObjectKey
     part <- forAll $ G.text (R.linear 3 10) G.alphaNum
     ext  <- forAll $ G.text (R.linear 2 4)  G.alphaNum
-    toText (loc </> part <.> ext) === (toText loc) <> "/" <> part <> "." <> ext
-    toText (loc </> ("/" <> part) <.> ("." <> ext)) === (toText loc) <> "/" <> part <> "." <> ext
+    if "/" `T.isSuffixOf` toText loc
+      then do
+        toText (loc </> part <.> ext)                   === toText loc        <> part <> "." <> ext
+        toText (loc </> ("/" <> part) <.> ("." <> ext)) === toText loc        <> part <> "." <> ext
+      else do
+        toText (loc </> part <.> ext)                   === toText loc <> "/" <> part <> "." <> ext
+        toText (loc </> ("/" <> part) <.> ("." <> ext)) === toText loc <> "/" <> part <> "." <> ext
 
-  it "Should replace s3 path extension" $ requireProperty $ do
-    loc  <- S3 <$> forAll G.s3Uri
+  it "Should replace s3 path extension to s3uri with object key" $ requireProperty $ do
+    loc  <- S3 <$> forAll G.s3UriWithObjectKey
     part <- forAll $ G.text (R.linear 3 10) G.alphaNum
     ext  <- forAll $ G.text (R.linear 2 4)  G.alphaNum
     ext' <- forAll $ G.text (R.linear 2 4)  G.alphaNum
-    toText (loc </> part <.> ext -<.> ext') === (toText loc) <> "/" <> part <> "." <> ext'
-    toText (loc </> ("/" <> part) <.> ("." <> ext) -<.> ("." <> ext')) === (toText loc) <> "/" <> part <> "." <> ext'
+    if "/" `T.isSuffixOf` toText loc
+      then do
+        toText (loc </> part <.> ext -<.> ext')                             === toText loc        <> part <> "." <> ext'
+        toText (loc </> ("/" <> part) <.> ("." <> ext) -<.> ("." <> ext'))  === toText loc        <> part <> "." <> ext'
+      else do
+        toText (loc </> part <.> ext -<.> ext')                             === toText loc <> "/" <> part <> "." <> ext'
+        toText (loc </> ("/" <> part) <.> ("." <> ext) -<.> ("." <> ext'))  === toText loc <> "/" <> part <> "." <> ext'
+
+  it "Should append s3 path to s3uri without object key" $ requireProperty $ do
+    loc  <- S3 <$> forAll G.s3UriWithoutObjectKey
+    part <- forAll $ G.text (R.linear 3 10) G.alphaNum
+    ext  <- forAll $ G.text (R.linear 2 4)  G.alphaNum
+    toText (loc </> part <.> ext)                   === toText loc <>        part <> "." <> ext
+    toText (loc </> ("/" <> part) <.> ("." <> ext)) === toText loc <> "/" <> part <> "." <> ext
+
+  it "Should replace s3 path extension to s3uri without object key" $ requireProperty $ do
+    loc  <- S3 <$> forAll G.s3UriWithoutObjectKey
+    part <- forAll $ G.text (R.linear 3 10) G.alphaNum
+    ext  <- forAll $ G.text (R.linear 2 4)  G.alphaNum
+    ext' <- forAll $ G.text (R.linear 2 4)  G.alphaNum
+    toText (loc </> part <.> ext -<.> ext')                             === toText loc <>        part <> "." <> ext'
+    toText (loc </> ("/" <> part) <.> ("." <> ext) -<.> ("." <> ext'))  === toText loc <> "/" <> part <> "." <> ext'
 
   it "Should append local path" $ requireProperty $ do
     loc  <- Local <$> forAll G.localPath
@@ -84,7 +112,12 @@ spec = describe "HaskellWorks.Assist.LocationSpec" $ do
 
   it "dirname" $ requireTest $ do
     location <- forAll G.location
-    dirname (location </> "x") === location
+    case location of
+      S3 s3Uri -> if
+        | s3Uri ^. the @2 == ""   -> dirname location           === location
+        | s3Uri ^. the @2 == "/"  -> dirname (location </> "x") === root location
+        | otherwise               -> dirname (location </> "x") === location
+      _ -> dirname (location </> "x") === location
 
   it "modPath" $ requireTest $ do
     let input     :: Location = fromJust (toLocation ("s3://bucket/object/key.ext"))
