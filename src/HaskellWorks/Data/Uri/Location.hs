@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE DeriveAnyClass         #-}
 {-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
@@ -25,6 +26,7 @@ module HaskellWorks.Data.Uri.Location
 import Antiope.Core              (ToText (..), fromText)
 import Antiope.S3                (ObjectKey (..), S3Uri (..))
 import Control.Applicative
+import Control.DeepSeq
 import Control.Lens              ((%~), (&), (^.))
 import Data.Aeson
 import Data.Generics.Product.Any
@@ -53,7 +55,7 @@ data Location
   = S3 S3Uri
   | Local FilePath
   | HttpUri Text
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, NFData)
 
 instance ToJSON Location where
   toJSON v = case v of

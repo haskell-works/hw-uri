@@ -12,6 +12,7 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Data.Maybe                     (isJust)
 import HaskellWorks.Data.Uri.IO.Lazy
+import HaskellWorks.Data.Uri.Status
 import HaskellWorks.Data.Uri.UriError
 import HaskellWorks.Hspec.Hedgehog
 import Hedgehog
@@ -19,7 +20,6 @@ import Test.Hspec
 
 import qualified Antiope.S3.Types           as AWS
 import qualified Data.ByteString.Lazy.Char8 as LBSC
-import qualified Network.HTTP.Types         as HTTP
 import qualified System.Environment         as IO
 
 {-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
@@ -34,5 +34,5 @@ spec = describe "HaskellWorks.Data.Uri.QuerySpec" $ do
       envAws <- liftIO $ mkEnv Oregon (const LBSC.putStrLn)
       result <- liftIO $ runResourceT $ headS3Uri envAws $ AWS.S3Uri "jky-mayhem" "hjddhd"
       result === Left AwsUriError
-        { status = HTTP.Status { HTTP.statusCode = 404 , HTTP.statusMessage = "Not Found" }
+        { status = Status { statusCode = 404 , statusMessage = "Not Found" }
         }
