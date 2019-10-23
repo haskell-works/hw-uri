@@ -48,7 +48,6 @@ import qualified Network.AWS.S3.CopyObject        as AWS
 import qualified Network.AWS.S3.HeadObject        as AWS
 import qualified Network.AWS.S3.PutObject         as AWS
 import qualified Network.HTTP.Client              as HTTP
-import qualified Network.HTTP.Types               as HTTP
 import qualified System.Directory                 as IO
 import qualified System.FilePath.Posix            as FP
 import qualified System.IO                        as IO
@@ -61,9 +60,8 @@ import qualified System.IO.Error                  as IO
 handleAwsError :: MonadCatch m => m a -> m (Either UriError a)
 handleAwsError f = catch (Right <$> f) $ \(e :: AWS.Error) ->
   case e of
-    (AWS.ServiceError (AWS.ServiceError' _ s@(HTTP.Status 404 _) _ _ _ _)) -> return (Left (AwsUriError s))
-    (AWS.ServiceError (AWS.ServiceError' _ s@(HTTP.Status 301 _) _ _ _ _)) -> return (Left (AwsUriError s))
-    _                                                                      -> throwM e
+    (AWS.ServiceError (AWS.ServiceError' _ s _ _ _ _)) -> return (Left (AwsUriError s))
+    _                                                  -> throwM e
 
 handleHttpError :: MonadCatch m => m a -> m (Either UriError a)
 handleHttpError f = catch (Right <$> f) $ \(e :: HTTP.HttpException) ->
