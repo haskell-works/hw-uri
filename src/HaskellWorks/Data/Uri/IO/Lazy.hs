@@ -32,6 +32,7 @@ import Data.Semigroup                 ((<>))
 import Data.Text                      (Text)
 import HaskellWorks.Data.Uri.Location (Location (..))
 import HaskellWorks.Data.Uri.Show
+import HaskellWorks.Data.Uri.Status
 import HaskellWorks.Data.Uri.UriError
 
 import qualified Antiope.S3                       as AWS
@@ -60,14 +61,14 @@ import qualified System.IO.Error                  as IO
 handleAwsError :: MonadCatch m => m a -> m (Either UriError a)
 handleAwsError f = catch (Right <$> f) $ \(e :: AWS.Error) ->
   case e of
-    (AWS.ServiceError (AWS.ServiceError' _ s _ _ _ _)) -> return (Left (AwsUriError s))
+    (AWS.ServiceError (AWS.ServiceError' _ s _ _ _ _)) -> return (Left (AwsUriError (fromHttpStatus s)))
     _                                                  -> throwM e
 
 handleHttpError :: MonadCatch m => m a -> m (Either UriError a)
 handleHttpError f = catch (Right <$> f) $ \(e :: HTTP.HttpException) ->
   case e of
     (HTTP.HttpExceptionRequest _ e') -> case e' of
-      HTTP.StatusCodeException resp _ -> return (Left (HttpUriError (resp & HTTP.responseStatus)))
+      HTTP.StatusCodeException resp _ -> return (Left (HttpUriError (fromHttpStatus (resp & HTTP.responseStatus))))
       _                               -> return (Left (GenericUriError (tshow e')))
     _                                 -> throwM e
 

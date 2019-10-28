@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -7,27 +8,28 @@ module HaskellWorks.Data.Uri.UriError
   , uriErrorStatus
   ) where
 
-import Data.Semigroup             ((<>))
+import Control.DeepSeq
+import Data.Semigroup               ((<>))
 import Data.String
-import Data.Text                  (Text)
+import Data.Text                    (Text)
 import GHC.Generics
 import HaskellWorks.Data.Uri.Show
+import HaskellWorks.Data.Uri.Status
 
-import qualified Data.Text          as T
-import qualified Network.HTTP.Types as HTTP
+import qualified Data.Text as T
 
 data UriError
   = AwsUriError
-    { status :: HTTP.Status
+    { status :: Status
     }
   | HttpUriError
-    { status :: HTTP.Status
+    { status :: Status
     }
   | RetriesFailedUriError
   | NotFound
   | DeleteFailed Text
   | GenericUriError Text
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, NFData)
 
 instance IsString UriError where
   fromString = GenericUriError . T.pack
@@ -41,5 +43,5 @@ displayUriError (GenericUriError msg) = msg
 displayUriError (DeleteFailed msg)    = "Delete failed: " <> msg
 
 uriErrorStatus :: UriError -> Maybe Int
-uriErrorStatus (AwsUriError (HTTP.Status statusCode _)) = Just statusCode
-uriErrorStatus _                                        = Nothing
+uriErrorStatus (AwsUriError (Status statusCode _)) = Just statusCode
+uriErrorStatus _                                   = Nothing
