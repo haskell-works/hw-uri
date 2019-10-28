@@ -19,13 +19,14 @@ module HaskellWorks.Data.Uri.Location
   , modBasenameParts
   , modBasenamePartsReversed
   , modExts
+  , root
   , withoutPrefix
   ) where
 
 import Antiope.Core              (ToText (..), fromText)
 import Antiope.S3                (ObjectKey (..), S3Uri (..))
 import Control.Applicative
-import Control.Lens              ((%~), (&), (^.))
+import Control.Lens              ((%~), (&), (.~), (^.))
 import Data.Aeson
 import Data.Generics.Product.Any
 import Data.Semigroup            ((<>))
@@ -38,6 +39,7 @@ import qualified Data.List                           as L
 import qualified Data.Text                           as T
 import qualified HaskellWorks.Data.Uri.Internal.List as L
 import qualified HaskellWorks.Data.Uri.Internal.Text as T
+import qualified Network.URI                         as NURI
 import qualified System.FilePath                     as FP
 
 class IsPath a s | a -> s where
@@ -106,8 +108,9 @@ instance (a ~ Char) => IsPath [a] [a] where
   b -<.> e = b FP.-<.> e
 
 instance IsPath S3Uri Text where
-  S3Uri b (ObjectKey k) </>  p =
-    S3Uri b (ObjectKey (T.maybeStripSuffix "/" k <> "/" <> T.maybeStripPrefix "/" p))
+  S3Uri b ok </> p = case ok of
+    ObjectKey "" -> S3Uri b (ObjectKey p)
+    ObjectKey k  -> S3Uri b (ObjectKey (T.maybeStripSuffix "/" k <> "/" <> T.maybeStripPrefix "/" p))
 
   S3Uri b (ObjectKey k) <.>  e =
     S3Uri b (ObjectKey (T.maybeStripSuffix "." k <> "." <> T.maybeStripPrefix "." e))
@@ -121,7 +124,7 @@ toLocation txt = if
   | T.isPrefixOf "file://" txt'  -> Just (Local (T.unpack txt'))
   | T.isPrefixOf "http://" txt'  -> Just (HttpUri txt')
   | T.isInfixOf  "://" txt'      -> Nothing
-  | otherwise                       -> Just (Local (T.unpack txt'))
+  | otherwise                    -> Just (Local (T.unpack txt'))
   where txt' = T.strip txt
 
 dirname :: Location -> Location
@@ -135,6 +138,14 @@ basename location = case location of
   S3 s3Uri    -> T.pack . FP.takeFileName $ T.unpack (toText (s3Uri ^. the @"objectKey"))
   Local fp    -> T.pack $ FP.takeFileName fp
   HttpUri uri -> T.pack . FP.takeFileName $ T.unpack uri
+
+root :: Location -> Location
+root location = case location of
+  S3 s3Uri    -> S3 (s3Uri & the @"objectKey" . the @1 .~ "")
+  Local _     -> Local "/"
+  HttpUri uri -> case NURI.parseURI (T.unpack uri) of
+    Just (NURI.URI scheme authority _ _ _) -> HttpUri (T.pack (NURI.uriToString id (NURI.URI scheme authority "" "" "") ""))
+    Nothing                                -> HttpUri uri
 
 modPath :: (Text -> Text) -> Location -> Location
 modPath f location = case location of
