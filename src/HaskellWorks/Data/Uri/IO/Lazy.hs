@@ -78,10 +78,14 @@ getS3Uri envAws (AWS.S3Uri b k) = handleAwsError $ runAws envAws $ AWSL.unsafeDo
 readResource :: (MonadResource m, MonadCatch m) => AWS.Env -> Location -> m (Either UriError LBS.ByteString)
 readResource envAws = \case
   S3 s3Uri        -> getS3Uri envAws s3Uri
-  Local path      -> liftIO $ do
-    fileExists <- IO.doesFileExist path
+  Local path      -> do
+    fileExists <- liftIO $ IO.doesFileExist path
     if fileExists
-      then Right <$> LBS.readFile path
+      then do
+        h <- liftIO $ IO.openFile path IO.ReadMode
+        void $ register (IO.hClose h)
+        lbs <- liftIO $ LBS.hGetContents h
+        return (Right lbs)
       else pure (Left NotFound)
   HttpUri httpUri -> liftIO $ readHttpUri httpUri
 
