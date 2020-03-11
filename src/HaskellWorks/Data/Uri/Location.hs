@@ -55,7 +55,7 @@ data Location
   = S3 S3Uri
   | Local FilePath
   | HttpUri Text
-  deriving (Show, Eq, Generic, NFData)
+  deriving (Show, Ord, Eq, Generic, NFData)
 
 instance ToJSON Location where
   toJSON v = case v of
