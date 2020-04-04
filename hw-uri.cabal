@@ -11,7 +11,7 @@ author:                 John Ky
 maintainer:             newhoggy@gmail.com
 copyright:              John Ky 2019, David Turnbull 2019
 category:               Data
-tested-with:            GHC == 8.8.1, GHC == 8.6.5, GHC == 8.4.4, GHC == 8.2.2
+tested-with:            GHC == 8.8.3, GHC == 8.6.5, GHC == 8.4.4, GHC == 8.2.2
 extra-source-files:     CHANGELOG.md, README.md
 
 source-repository head
