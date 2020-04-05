@@ -30,7 +30,6 @@ import Control.DeepSeq
 import Control.Lens              ((%~), (&), (^.))
 import Data.Aeson
 import Data.Generics.Product.Any
-import Data.Semigroup            ((<>))
 import Data.Text                 (Text)
 import GHC.Generics              (Generic)
 

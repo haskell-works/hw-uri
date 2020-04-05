@@ -10,7 +10,6 @@ module HaskellWorks.Data.Uri.IO.File
 
 import Control.Monad.Except
 import Control.Monad.IO.Unlift
-import Data.Semigroup          ((<>))
 import System.FilePath
 
 import qualified Data.List                           as L

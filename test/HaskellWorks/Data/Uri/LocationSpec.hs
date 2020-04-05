@@ -11,7 +11,6 @@ import Antiope.S3                     (S3Uri (..))
 import Control.Lens                   ((&))
 import Data.Aeson
 import Data.Maybe
-import Data.Semigroup                 ((<>))
 import Data.Text                      (Text)
 import HaskellWorks.Data.Uri.Location
 import HaskellWorks.Hspec.Hedgehog

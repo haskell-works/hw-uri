@@ -28,7 +28,6 @@ import Control.Monad.Except
 import Control.Monad.Trans.Resource
 import Data.Either                    (isRight)
 import Data.Generics.Product.Any
-import Data.Semigroup                 ((<>))
 import Data.Text                      (Text)
 import HaskellWorks.Data.Uri.Location (Location (..))
 import HaskellWorks.Data.Uri.Show

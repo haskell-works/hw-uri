@@ -9,7 +9,6 @@ module HaskellWorks.Data.Uri.Gen
   ) where
 
 import Antiope.S3                     (BucketName (..), ObjectKey (..), S3Uri (..))
-import Data.Semigroup                 ((<>))
 import Data.Text                      (Text)
 import HaskellWorks.Data.Uri.Location
 import Hedgehog                       (MonadGen)

@@ -7,7 +7,6 @@ module HaskellWorks.Data.Uri.AWS.Env
 import Antiope.Env                (LogLevel (..))
 import Control.Concurrent         (myThreadId)
 import Control.Monad
-import Data.Semigroup             ((<>))
 import HaskellWorks.Data.Uri.Show
 
 import qualified Data.ByteString.Lazy             as LBS

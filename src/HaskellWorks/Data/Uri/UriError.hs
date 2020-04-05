@@ -9,7 +9,6 @@ module HaskellWorks.Data.Uri.UriError
   ) where
 
 import Control.DeepSeq
-import Data.Semigroup               ((<>))
 import Data.String
 import Data.Text                    (Text)
 import GHC.Generics

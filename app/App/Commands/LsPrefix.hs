@@ -15,7 +15,6 @@ import Control.Lens
 import Control.Monad.Except
 import Control.Monad.Trans.Resource   (runResourceT)
 import Data.Generics.Product.Any
-import Data.Semigroup                 ((<>))
 import HaskellWorks.Data.Uri.Location
 import HaskellWorks.Data.Uri.UriError (displayUriError)
 import Options.Applicative            hiding (columns)
