@@ -8,7 +8,6 @@ import Antiope.Env        (LogLevel (..))
 import App.Show
 import Control.Concurrent (myThreadId)
 import Control.Monad
-import Data.Semigroup     ((<>))
 
 import qualified Data.ByteString.Lazy       as LBS
 import qualified Data.ByteString.Lazy.Char8 as LC8

@@ -9,7 +9,6 @@ module HaskellWorks.Data.Uri.IO.Error
   ) where
 
 import Control.Monad.Except
-import Data.Semigroup                 ((<>))
 import HaskellWorks.Data.Uri.UriError
 
 import qualified HaskellWorks.Data.Uri.IO.Console as CIO
