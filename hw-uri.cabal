@@ -9,16 +9,17 @@ license:                BSD-3-Clause
 license-file:           LICENSE
 author:                 John Ky
 maintainer:             newhoggy@gmail.com
-copyright:              John Ky 2019, David Turnbull 2019
+copyright:              2019-2020 John Ky
+                        2019 David Turnbull
 category:               Data
-tested-with:            GHC == 8.8.3, GHC == 8.6.5, GHC == 8.4.4, GHC == 8.2.2
+tested-with:            GHC == 8.8.3, GHC == 8.6.5, GHC == 8.4.4
 extra-source-files:     CHANGELOG.md, README.md
 
 source-repository head
   type: git
   location: https://github.com/haskell-works/hw-uri
 
-common base                           { build-depends: base                           >= 4.7        && < 5      }
+common base                           { build-depends: base                           >= 4.11       && < 5      }
 
 common aeson                          { build-depends: aeson                          >= 1.4.4.0    && < 1.5    }
 common amazonka                       { build-depends: amazonka                       >= 1.6.1      && < 1.7    }
