@@ -12,7 +12,7 @@ maintainer:             newhoggy@gmail.com
 copyright:              2019-2020 John Ky
                         2019 David Turnbull
 category:               Data
-tested-with:            GHC == 8.8.3, GHC == 8.6.5, GHC == 8.4.4
+tested-with:            GHC == 8.10.1, GHC == 8.8.3, GHC == 8.6.5, GHC == 8.4.4
 extra-source-files:     CHANGELOG.md, README.md
 
 source-repository head
@@ -44,7 +44,7 @@ common hw-prim                        { build-depends: hw-prim                  
 common lens                           { build-depends: lens                           >= 4.17       && < 5      }
 common mtl                            { build-depends: mtl                            >= 2.2.2      && < 2.3    }
 common optparse-applicative           { build-depends: optparse-applicative           >= 0.14       && < 0.16   }
-common unliftio-core                  { build-depends: unliftio-core                  >= 0.1.2.0    && < 0.2    }
+common unliftio-core                  { build-depends: unliftio-core                  >= 0.1.2.0    && < 0.3    }
 common resourcet                      { build-depends: resourcet                      >= 1.2.2      && < 1.3    }
 common text                           { build-depends: text                           >= 1.2.3.1    && < 1.3    }
 
