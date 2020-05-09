@@ -18,9 +18,9 @@ import qualified Data.Text      as T
 import qualified Hedgehog.Gen   as G
 import qualified Hedgehog.Range as R
 
-{-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
-{-# ANN module ("HLint: ignore Reduce duplication"  :: String) #-}
-{-# ANN module ("HLint: ignore Redundant bracket"   :: String) #-}
+{- HLINT ignore "Redundant do"        -}
+{- HLINT ignore "Reduce duplication"  -}
+{- HLINT ignore "Redundant bracket"   -}
 
 bucketName :: MonadGen m => m BucketName
 bucketName = BucketName <$> G.text (R.linear 3 10) G.alphaNum
