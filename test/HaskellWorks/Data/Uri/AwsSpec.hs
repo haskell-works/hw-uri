@@ -22,9 +22,9 @@ import qualified Antiope.S3.Types           as AWS
 import qualified Data.ByteString.Lazy.Char8 as LBSC
 import qualified System.Environment         as IO
 
-{-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
-{-# ANN module ("HLint: ignore Reduce duplication"  :: String) #-}
-{-# ANN module ("HLint: ignore Redundant bracket"   :: String) #-}
+{- HLINT ignore "Redundant do"        -}
+{- HLINT ignore "Reduce duplication"  -}
+{- HLINT ignore "Redundant bracket"   -}
 
 spec :: Spec
 spec = describe "HaskellWorks.Data.Uri.QuerySpec" $ do

@@ -53,9 +53,9 @@ import qualified System.FilePath.Posix            as FP
 import qualified System.IO                        as IO
 import qualified System.IO.Error                  as IO
 
-{-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
-{-# ANN module ("HLint: ignore Reduce duplication"  :: String) #-}
-{-# ANN module ("HLint: ignore Redundant bracket"   :: String) #-}
+{- HLINT ignore "Redundant do"        -}
+{- HLINT ignore "Reduce duplication"  -}
+{- HLINT ignore "Redundant bracket"   -}
 
 handleAwsError :: MonadCatch m => m a -> m (Either UriError a)
 handleAwsError f = catch (Right <$> f) $ \(e :: AWS.Error) ->
