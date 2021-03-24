@@ -13,7 +13,7 @@ import Data.String
 import Data.Text                    (Text)
 import GHC.Generics
 import HaskellWorks.Data.Uri.Show
-import HaskellWorks.Data.Uri.Status
+import HaskellWorks.Data.Uri.Status hiding (statusCode)
 
 import qualified Data.Text as T
 

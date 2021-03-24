@@ -64,13 +64,13 @@ instance ToJSON Location where
 
 parseJsonLocal :: Value -> J.Parser FilePath
 parseJsonLocal (J.String v) = return (T.unpack v)
-parseJsonLocal v            = J.typeMismatch ("FilePath (String)") v
+parseJsonLocal v            = J.typeMismatch "FilePath (String)" v
 
 parseJsonHttpUri :: Value -> J.Parser Text
 parseJsonHttpUri v@(J.String s) = if T.isPrefixOf "http://" s || T.isPrefixOf "https://" s
   then return s
-  else J.typeMismatch ("HttpUri (String)") v
-parseJsonHttpUri v = J.typeMismatch ("HttpUri (String)") v
+  else J.typeMismatch "HttpUri (String)" v
+parseJsonHttpUri v = J.typeMismatch "HttpUri (String)" v
 
 instance FromJSON Location where
   parseJSON v =
@@ -162,8 +162,8 @@ modBasenamePartsReversed f = modBasenameParts (reverse . f . reverse)
 modExts :: [Text] -> [Text] -> Location -> Location
 modExts fromExts toExts = modBasenameParts f
   where f :: [Text] -> [Text]
-        f as = if L.isSuffixOf fromExts as
-          then (reverse (drop (length fromExts) (reverse as))) <> toExts
+        f as = if fromExts `L.isSuffixOf` as
+          then reverse (drop (length fromExts) (reverse as)) <> toExts
           else as
 
 withoutPrefix :: Location -> Location -> Maybe Text
