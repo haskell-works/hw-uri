@@ -28,7 +28,6 @@ import Control.Monad.Except
 import Control.Monad.Trans.Resource
 import Data.Either                    (isRight)
 import Data.Generics.Product.Any
-import Data.Text                      (Text)
 import HaskellWorks.Data.Uri.Location (Location (..))
 import HaskellWorks.Data.Uri.Show
 import HaskellWorks.Data.Uri.Status
@@ -190,7 +189,7 @@ retryWhen p n f = catchError f $ \exception -> if n > 0
   then do
     liftIO $ CIO.hPutStrLn IO.stderr $ "WARNING: " <> tshow exception <> " (retrying)"
     liftIO $ IO.threadDelay 1000000
-    if (p exception )
+    if p exception
       then retry (n - 1) f
       else throwError exception
   else throwError exception
