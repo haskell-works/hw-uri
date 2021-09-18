@@ -9,10 +9,10 @@ license:                BSD-3-Clause
 license-file:           LICENSE
 author:                 John Ky
 maintainer:             newhoggy@gmail.com
-copyright:              2019-2020 John Ky
+copyright:              2019-2021 John Ky
                         2019 David Turnbull
 category:               Data
-tested-with:            GHC == 8.8.3, GHC == 8.6.5, GHC == 8.4.4
+tested-with:            GHC == 8.10.7, GHC == 8.8.4, GHC == 8.6.5
 extra-source-files:     CHANGELOG.md, README.md
 
 source-repository head
@@ -28,16 +28,16 @@ common amazonka-s3                    { build-depends: amazonka-s3              
 common antiope-core                   { build-depends: antiope-core                   >= 7.4.5      && < 8      }
 common antiope-s3                     { build-depends: antiope-s3                     >= 7.4.5      && < 8      }
 common antiope-optparse-applicative   { build-depends: antiope-optparse-applicative   >= 7.0.1      && < 8      }
-common bytestring                     { build-depends: bytestring                     >= 0.10.8.2   && < 0.11   }
+common bytestring                     { build-depends: bytestring                     >= 0.10.8.2   && < 0.12   }
 common deepseq                        { build-depends: deepseq                        >= 1.4        && < 1.5    }
 common directory                      { build-depends: directory                      >= 1.3.3.0    && < 1.4    }
-common dlist                          { build-depends: dlist                          >= 0.8.0.7    && < 0.9    }
+common dlist                          { build-depends: dlist                          >= 0.8.0.7    && < 1.1    }
 common exceptions                     { build-depends: exceptions                     >= 0.10.1     && < 0.11   }
 common filepath                       { build-depends: filepath                       >= 1.3        && < 1.5    }
-common generic-lens                   { build-depends: generic-lens                   >= 1.1.0.0    && < 2.2    }
+common generic-lens                   { build-depends: generic-lens                   >= 1.1.0.0    && < 2.3    }
 common hedgehog                       { build-depends: hedgehog                       >= 0.5        && < 1.1    }
 common hspec                          { build-depends: hspec                          >= 2.4        && < 3      }
-common http-client                    { build-depends: http-client                    >= 0.5.14     && < 0.7    }
+common http-client                    { build-depends: http-client                    >= 0.5.14     && < 0.8    }
 common http-types                     { build-depends: http-types                     >= 0.12.3     && < 0.13   }
 common hw-hspec-hedgehog              { build-depends: hw-hspec-hedgehog              >= 0.1.0.4    && < 0.2    }
 common hw-prim                        { build-depends: hw-prim                        >= 0.6.2.33   && < 0.7    }
