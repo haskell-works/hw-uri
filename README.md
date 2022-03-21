@@ -1,2 +1,2 @@
 # s3-uri
-[![CircleCI](https://circleci.com/gh/haskell-works/hw-uri.svg?style=svg)](https://circleci.com/gh/haskell-works/hw-uri)
+[![Binaries](https://github.com/haskell-works/hw-uri/actions/workflows/haskell.yml/badge.svg)](https://github.com/haskell-works/hw-uri/actions/workflows/haskell.yml)
